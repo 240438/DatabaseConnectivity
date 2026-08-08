@@ -12,35 +12,68 @@ python labs/elasticsearch/01_connect.py
 ```
 Expected: success message (`✅ Connected ...`).
 
-## Step 2 - Create
+## Step 2 - Create index (if needed)
+Run:
+```bash
+python labs/elasticsearch/07_create_index.py
+```
+Purpose: creates the configured index (no-op if it already exists). This prepares the index before bulk ingesting many documents.
+
+Expected: message `✅ Index '<index-name>' created (or already exists).`
+
+## Step 3 - Bulk ingest documents
+Create or use a JSON Lines file (one JSON object per line) where each line has an `id` field and either a `document` object or other fields. Example file included: `labs/elasticsearch/file.json`.
+
+Example lines:
+```json
+{"id":"doc-1","document":{"name":"Alice","text":"Alice loves databases"}}
+{"id":"doc-2","name":"Bob","text":"Bob studies full text search"}
+```
+
+Run:
+```bash
+python labs/elasticsearch/08_bulk_ingest.py labs/elasticsearch/file.json
+```
+Expected: a summary message like `✅ Bulk ingest completed. Imported N documents into index='<index-name>'.`
+
+## Step 4 - Search
+Run:
+```bash
+python labs/elasticsearch/09_search.py "search terms here" --top 5
+```
+Purpose: search the configured index and print ranked results (top N).
+
+Expected: printed ranked results with document id, score, and source.
+
+## Step 5 - Create
 Run:
 ```bash
 python labs/elasticsearch/02_create.py
 ```
 Expected: one deterministic student record is created (`id` or key `1001` / `student-1001`).
 
-## Step 3 - Read
+## Step 6 - Read
 Run:
 ```bash
 python labs/elasticsearch/03_read.py
 ```
 Expected: the inserted student values are printed (`Asha`, `DB Basics`).
 
-## Step 4 - Update
+## Step 7 - Update
 Run:
 ```bash
 python labs/elasticsearch/04_update.py
 ```
 Expected: `before` shows original course and `after` shows `Advanced Databases`.
 
-## Step 5 - Delete
+## Step 8 - Delete
 Run:
 ```bash
 python labs/elasticsearch/05_delete.py
 ```
 Expected: the target student record is deleted.
 
-## Step 6 - Verify final state
+## Step 9 - Verify final state
 Run:
 ```bash
 python labs/elasticsearch/06_verify.py
