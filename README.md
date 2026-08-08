@@ -1,160 +1,116 @@
-# Database Connectivity Lab (Python + Docker)
+# Database Connectivity Course Lab (Step-by-Step)
 
-This ready-to-run lab teaches students how applications connect to databases and how to safely provide connection settings externally.
+## Objective
+Build hands-on database connectivity skills by running small, verifiable CRUD steps for multiple database types using Python and Docker.
 
-## Learning Objectives
+## Learning Outcomes
+After completing this repository, students can:
+- configure database connection settings without hardcoding credentials
+- connect to relational, document, key-value, graph, wide-column, and search databases
+- run CRUD as a clear step-by-step process
+- verify final state after deletion
 
-By the end of this lab, students will be able to:
-1. Explain why apps need a database endpoint, username, and password.
-2. Use database libraries in Python for different database categories.
-3. Avoid hardcoding endpoint/username/password in source code.
-4. Provide configuration through:
-   - Environment variables
-   - External configuration/properties file
-5. Implement CRUD operations for multiple database types.
+## Prerequisites
+- Docker + Docker Compose
+- Python 3.10+
+- pip
 
-## Database Types Covered
-
-- **Key-Value**: Redis
-- **Wide-Column**: Cassandra
-- **Document**: MongoDB
-- **Relational**: PostgreSQL
-- **Graph**: Neo4j
-- **Search**: Elasticsearch
-
-## Repository Structure
-
+## Repository Map
 ```text
 .
 ├── docker-compose.yml
-└── python_lab
-    ├── config.example.ini
-    ├── config_loader.py
-    ├── requirements.txt
-    ├── redis_crud.py
-    ├── cassandra_crud.py
-    ├── mongodb_crud.py
-    ├── postgres_crud.py
-    ├── neo4j_crud.py
-    └── elasticsearch_crud.py
+├── requirements.txt
+├── .env.example
+├── config/
+│   ├── postgresql.properties
+│   ├── mongodb.properties
+│   ├── redis.properties
+│   ├── neo4j.properties
+│   ├── cassandra.properties
+│   └── elasticsearch.properties
+├── labs/
+│   ├── common/config_loader.py
+│   ├── postgresql/
+│   ├── mongodb/
+│   ├── redis/
+│   ├── neo4j/
+│   ├── cassandra/
+│   └── elasticsearch/
+└── docs/student_checklist.md
 ```
 
-## Part 1 - Start Databases in Docker
+## Setup
+1. Clone and enter repository.
+2. Create virtual environment and install dependencies:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
-From repository root:
+## Configuration (.env + properties)
+1. Create a local env file:
+   ```bash
+   cp .env.example .env
+   ```
+2. Review `config/*.properties` files and set lab-safe values.
+3. Scripts load values in this order:
+   - environment variable (highest priority)
+   - `config/<db>.properties` value
+4. Never hardcode credentials in scripts.
 
+## Start database containers
 ```bash
 docker compose up -d
-```
-
-Check containers:
-
-```bash
 docker compose ps
 ```
 
-## Part 2 - Python Setup
+Health/wait notes:
+- Start all containers first, then wait before running labs.
+- Cassandra and Elasticsearch may need 30-90 seconds to become ready.
+- If Step 1 fails, wait and retry `01_connect.py`.
 
-```bash
-cd python_lab
-python -m venv .venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
+## Run each mini-lab
+Run from repository root:
 
-## Part 3 - External Configuration (No Hardcoding)
+### PostgreSQL (Relational)
+- Guide: `labs/postgresql/README.md`
+- Steps: `python labs/postgresql/01_connect.py` ... `python labs/postgresql/06_verify.py`
 
-### 3.1 Create properties/config file
+### MongoDB (Document)
+- Guide: `labs/mongodb/README.md`
+- Steps: `python labs/mongodb/01_connect.py` ... `python labs/mongodb/06_verify.py`
 
-```bash
-cp config.example.ini config.ini
-```
+### Redis (Key-Value)
+- Guide: `labs/redis/README.md`
+- Steps: `python labs/redis/01_connect.py` ... `python labs/redis/06_verify.py`
 
-`config_loader.py` reads from `config.ini` (or file path from `APP_CONFIG_FILE`).
+### Neo4j (Graph)
+- Guide: `labs/neo4j/README.md`
+- Steps: `python labs/neo4j/01_connect.py` ... `python labs/neo4j/06_verify.py`
 
-### 3.2 Override with environment variables
+### Cassandra (Wide-Column)
+- Guide: `labs/cassandra/README.md`
+- Steps: `python labs/cassandra/01_connect.py` ... `python labs/cassandra/06_verify.py`
 
-Students can override any value externally, for example:
+### Elasticsearch (Search)
+- Guide: `labs/elasticsearch/README.md`
+- Steps: `python labs/elasticsearch/01_connect.py` ... `python labs/elasticsearch/06_verify.py`
 
-```bash
-export POSTGRES_HOST=localhost
-export POSTGRES_PORT=5432
-export POSTGRES_USERNAME=appuser
-export POSTGRES_SECRET=apppass
-export POSTGRES_DATABASE=appdb
-```
+## Troubleshooting
+- **Module not found**: ensure venv is active and `pip install -r requirements.txt` completed.
+- **Config error**: fill missing keys in `.env` or matching `config/<db>.properties`.
+- **Connection refused/timeouts**: check `docker compose ps`, ports, and retry after wait.
+- **Auth failed**: confirm credentials in `.env` match container environment values.
 
-> This demonstrates best practice: **credentials and endpoints are external**, not hardcoded in code.
-> In this lab template, the config key name `secret` stores the database password value.
+## Submission / Evidence Checklist
+Use `docs/student_checklist.md` to capture evidence for all CRUD stages and reflection questions.
 
-## Part 4 - Run CRUD Labs (One-by-One)
-
-From `python_lab` directory:
-
-```bash
-python redis_crud.py
-python cassandra_crud.py
-python mongodb_crud.py
-python postgres_crud.py
-python neo4j_crud.py
-python elasticsearch_crud.py
-```
-
-Each script demonstrates:
-- **Create** record/document/node/value
-- **Read** it
-- **Update** it
-- **Delete** it
-
-## Part 5 - Student Practical Tasks
-
-### Task A: Connectivity Concepts
-1. Identify endpoint, username, and password value (`secret` key) for each database in `config.ini`.
-2. Explain where each value is used in Python code.
-3. Prove no connection values are hardcoded in the CRUD logic.
-
-### Task B: Environment Variable Override
-1. Run one script using only `config.ini`.
-2. Override one setting using environment variables (example: `POSTGRES_HOST`).
-3. Re-run and document the observed behavior.
-
-### Task C: CRUD Validation for All Database Types
-For each of the 6 databases:
-1. Run script.
-2. Capture output of CREATE, READ, UPDATE, DELETE.
-3. Submit evidence (terminal output screenshot or text log).
-
-### Task D: Extend the Lab
-1. Add one more field (`email`) for student entity in all scripts.
-2. Update CREATE/READ/UPDATE/DELETE accordingly.
-3. Demonstrate successful execution after change.
-
-### Task E: Reflection Questions
-1. Why is hardcoding endpoint/username/password risky?
-2. What is the difference between using env vars and properties files?
-3. Which database type best fits:
-   - Session store
-   - Social graph
-   - Product catalog
-   - Full-text search
-4. What operational challenges did you observe with running many database engines together?
-
-## Instructor Notes
-
-- Cassandra may take longer than other services to become ready.
-- Elasticsearch and Neo4j use more memory than Redis/PostgreSQL.
-- If a script fails due to service readiness, wait and rerun.
-
-## Stop Lab
-
-From repository root:
-
+## Stop the lab
 ```bash
 docker compose down
 ```
-
-To remove volumes too:
-
+Remove volumes if needed:
 ```bash
 docker compose down -v
 ```
