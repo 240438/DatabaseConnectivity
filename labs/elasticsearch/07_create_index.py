@@ -1,3 +1,7 @@
+"""07_create_index.py - create the configured Elasticsearch index (idempotent)
+
+Run order number: 07
+"""
 from pathlib import Path
 import sys
 
