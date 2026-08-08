@@ -1,0 +1,54 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: lab-redis
+    ports:
+      - "6379:6379"
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: lab-cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: "LabCluster"
+      CASSANDRA_DATACENTER: "datacenter1"
+      CASSANDRA_RACK: "rack1"
+    ports:
+      - "9042:9042"
+
+  mongodb:
+    image: mongo:7
+    container_name: lab-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: lab-postgres
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+    ports:
+      - "5432:5432"
+
+  neo4j:
+    image: neo4j:5
+    container_name: lab-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/password123
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.0
+    container_name: lab-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
