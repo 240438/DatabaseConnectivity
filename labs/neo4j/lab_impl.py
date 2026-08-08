@@ -1,6 +1,10 @@
+# labs/neo4j/lab_impl.py
 from neo4j import GraphDatabase
+from dotenv import load_dotenv
 
 from labs.common.config_loader import ConfigError, load_db_config
+
+load_dotenv()
 
 
 STUDENT_ID = 1001
@@ -11,13 +15,14 @@ def _connect():
         "neo4j",
         "NEO4J",
         ["uri", "username", "password"],
-        {
-            "database": "neo4j",
-        },
+        {"database": "neo4j"},
     )
-    driver = GraphDatabase.driver(config["uri"], auth=(config["username"], config["password"]))
-    return driver, config["database"]
 
+    driver = GraphDatabase.driver(
+        config["uri"],
+        auth=(config["username"], config["password"]),
+    )
+    return driver, config["database"]
 
 def run_connect() -> None:
     try:
@@ -36,7 +41,8 @@ def run_create() -> None:
         driver, database = _connect()
         with driver.session(database=database) as session:
             session.run(
-                "MERGE (s:Student {id: $id}) SET s.name = $name, s.course = $course",
+                "MERGE (s:Student {id: $id}) "
+                "SET s.name = $name, s.course = $course",
                 id=STUDENT_ID,
                 name="Asha",
                 course="DB Basics",
@@ -54,7 +60,8 @@ def run_read() -> None:
         driver, database = _connect()
         with driver.session(database=database) as session:
             record = session.run(
-                "MATCH (s:Student {id: $id}) RETURN s.id AS id, s.name AS name, s.course AS course",
+                "MATCH (s:Student {id: $id}) "
+                "RETURN s.id AS id, s.name AS name, s.course AS course",
                 id=STUDENT_ID,
             ).single()
         driver.close()
@@ -70,18 +77,24 @@ def run_update() -> None:
         driver, database = _connect()
         with driver.session(database=database) as session:
             before = session.run(
-                "MATCH (s:Student {id: $id}) RETURN s.id AS id, s.name AS name, s.course AS course",
+                "MATCH (s:Student {id: $id}) "
+                "RETURN s.id AS id, s.name AS name, s.course AS course",
                 id=STUDENT_ID,
             ).single()
+
             session.run(
-                "MATCH (s:Student {id: $id}) SET s.course = $course",
+                "MATCH (s:Student {id: $id}) "
+                "SET s.course = $course",
                 id=STUDENT_ID,
                 course="Advanced Databases",
             )
+
             after = session.run(
-                "MATCH (s:Student {id: $id}) RETURN s.id AS id, s.name AS name, s.course AS course",
+                "MATCH (s:Student {id: $id}) "
+                "RETURN s.id AS id, s.name AS name, s.course AS course",
                 id=STUDENT_ID,
             ).single()
+
         driver.close()
         print(f"✅ UPDATE before: {before.data() if before else None}")
         print(f"✅ UPDATE after : {after.data() if after else None}")
@@ -95,7 +108,10 @@ def run_delete() -> None:
     try:
         driver, database = _connect()
         with driver.session(database=database) as session:
-            session.run("MATCH (s:Student {id: $id}) DETACH DELETE s", id=STUDENT_ID)
+            session.run(
+                "MATCH (s:Student {id: $id}) DETACH DELETE s",
+                id=STUDENT_ID,
+            )
         driver.close()
         print(f"✅ Deleted Student node with id={STUDENT_ID}.")
     except ConfigError as exc:
@@ -108,11 +124,14 @@ def run_verify() -> None:
     try:
         driver, database = _connect()
         with driver.session(database=database) as session:
-            count = session.run(
+            record = session.run(
                 "MATCH (s:Student {id: $id}) RETURN count(s) AS count",
                 id=STUDENT_ID,
-            ).single()["count"]
+            ).single()
+
         driver.close()
+        count = record["count"] if record else 0
+
         if count == 0:
             print("✅ VERIFY passed: node is absent as expected.")
         else:
