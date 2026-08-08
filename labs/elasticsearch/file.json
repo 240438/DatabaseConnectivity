@@ -1,5 +1,8 @@
-{"id":"doc-1","document":{"name":"Alice","text":"Alice loves databases and full text search"}}
-{"id":"doc-2","document":{"name":"Bob","text":"Bob studies distributed systems and search"}}
-{"id":"doc-3","document":{"name":"Carol","text":"Carol researches information retrieval and indexing"}}
-{"id":"doc-4","document":{"name":"Dave","text":"Dave is interested in performance and scalable search systems"}}
-{"id":"doc-5","document":{"name":"Eve","text":"Eve experiments with tokenization and term frequency analysis"}}
+[
+  {"id":"doc-1","document":{"name":"Alice","text":"Alice loves databases and full text search"}},
+  {"id":"doc-2","document":{"name":"Bob","text":"Bob studies distributed systems and search"}},
+  {"id":"doc-3","document":{"name":"Carol","text":"Carol researches information retrieval and indexing"}},
+  {"id":"doc-4","document":{"name":"Dave","text":"Dave is interested in performance and scalable search systems"}},
+  {"id":"doc-5","document":{"name":"Eve","text":"Eve experiments with tokenization and term frequency analysis"}}
+]
+
