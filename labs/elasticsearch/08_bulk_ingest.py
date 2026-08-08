@@ -1,3 +1,8 @@
+"""08_bulk_ingest.py - bulk ingest JSONL file into Elasticsearch index
+
+Run order number: 08
+Usage: python labs/elasticsearch/08_bulk_ingest.py path/to/file.json
+"""
 from pathlib import Path
 import sys
 import argparse

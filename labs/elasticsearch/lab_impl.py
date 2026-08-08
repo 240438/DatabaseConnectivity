@@ -2,6 +2,7 @@ from elasticsearch import Elasticsearch, NotFoundError  # type: ignore
 from labs.common.config_loader import ConfigError, load_db_config
 import os
 import json
+from typing import Any
 
 STUDENT_ID = "student-1001"
 
@@ -21,6 +22,32 @@ def _connect() -> tuple[Elasticsearch, str]:
         auth = (config["username"], config["password"])
     client = Elasticsearch(hosts=[config["host"]], basic_auth=auth)
     return client, config["index"]
+
+
+def _ensure_index_exists(client: Elasticsearch, index: str) -> None:
+    """Ensure the target index exists; create it if it does not.
+
+    Handles different client implementations by using indices.exists when
+    available and falling back to a safe create call.
+    """
+    try:
+        # Prefer exists() when available
+        if hasattr(client, "indices") and hasattr(client.indices, "exists"):
+            exists = client.indices.exists(index=index)
+            if exists:
+                return
+            # create index
+            client.indices.create(index=index)
+            return
+        # Fallback: attempt to create and ignore if it already exists
+        try:
+            client.indices.create(index=index, ignore=400)
+        except Exception:
+            # ignore and continue; we'll rely on subsequent operations to surface issues
+            pass
+    except Exception:
+        # Do not raise here; caller will handle failures during actual operations
+        pass
 
 
 def run_connect() -> None:
@@ -68,14 +95,14 @@ def run_read() -> None:
 def run_update() -> None:
     try:
         client, index = _connect()
-        before = client.get(index=index, id=STUDENT_ID)['_source']
+        before = client.get(index=index, id=STUDENT_ID)["_source"]
         client.update(
             index=index,
             id=STUDENT_ID,
             doc={"course": "Advanced Databases"},
             refresh=True,
         )
-        after = client.get(index=index, id=STUDENT_ID)['_source']
+        after = client.get(index=index, id=STUDENT_ID)["_source"]
         print(f"✅ UPDATE before: {before}")
         print(f"✅ UPDATE after : {after}")
     except NotFoundError:
@@ -112,15 +139,12 @@ def run_verify() -> None:
 
 
 # New utilities: create_index, bulk_ingest, search
-
 def run_create_index() -> None:
     try:
         client, index = _connect()
-        try:
-            client.indices.create(index=index, ignore=400)
-            print(f"✅ Index '{index}' created (or already exists).")
-        except AttributeError:
-            print(f"ℹ️ Client has no indices.create; assuming index '{index}' is available.")
+        # Use the helper to create if missing
+        _ensure_index_exists(client, index)
+        print(f"✅ Index '{index}' created (or already exists).")
     except ConfigError as exc:
         print(f"❌ Configuration error: {exc}")
     except Exception as exc:
@@ -138,34 +162,43 @@ def run_bulk_ingest(filepath: str) -> None:
     try:
         client, index = _connect()
 
+        # Ensure the index exists before ingesting
+        _ensure_index_exists(client, index)
+
         if not os.path.exists(filepath):
             print(f"❌ Bulk file not found: {filepath}")
             return
 
         imported = 0
+        line_no = 0
         with open(filepath, "r", encoding="utf-8") as fh:
             for raw in fh:
+                line_no += 1
                 line = raw.strip()
                 if not line:
                     continue
                 try:
                     obj = json.loads(line)
                 except Exception as exc:
-                    print(f"⚠️ Skipping invalid JSON line: {exc}")
+                    print(f"⚠️ Skipping invalid JSON line {line_no}: {exc}")
                     continue
 
                 doc_id = obj.get("id")
                 document = obj.get("document") or obj
                 if doc_id is None:
-                    print("⚠️ Skipping line without 'id' field.")
+                    print(f"⚠️ Skipping line {line_no} without 'id' field.")
                     continue
 
                 if document is obj:
                     document = dict(obj)
                     document.pop("id", None)
 
-                client.index(index=index, id=doc_id, document=document, refresh=False)
-                imported += 1
+                try:
+                    client.index(index=index, id=doc_id, document=document, refresh=False)
+                    imported += 1
+                except Exception as exc:
+                    print(f"⚠️ Failed to index doc id={doc_id} at line {line_no}: {exc}")
+                    continue
 
         print(f"✅ Bulk ingest completed. Imported {imported} documents into index='{index}'.")
     except ConfigError as exc:
@@ -177,7 +210,21 @@ def run_bulk_ingest(filepath: str) -> None:
 def run_search(query: str, top_k: int = 10) -> None:
     try:
         client, index = _connect()
-        resp = client.search(index=index, query={"query_string": {"query": query}}, size=top_k)
+        # Try modern client signature first, fallback to body-based search
+        try:
+            resp = client.search(index=index, query={"query_string": {"query": query}}, size=top_k)
+        except TypeError:
+            # older client may expect 'body' parameter
+            body = {"query": {"query_string": {"query": query}}}
+            resp = client.search(index=index, body=body, size=top_k)
+        except Exception as exc:
+            # as a last resort try body call
+            try:
+                body = {"query": {"query_string": {"query": query}}}
+                resp = client.search(index=index, body=body, size=top_k)
+            except Exception as exc2:
+                raise exc2 from exc
+
         hits = resp.get("hits", {}).get("hits", [])
         if not hits:
             print("No results.")

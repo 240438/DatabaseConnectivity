@@ -1,3 +1,8 @@
+"""09_search.py - search the configured Elasticsearch index for a query string
+
+Run order number: 09
+Usage: python labs/elasticsearch/09_search.py "query string" --top 5
+"""
 from pathlib import Path
 import sys
 import argparse
